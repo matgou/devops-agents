@@ -1,0 +1,4 @@
+kubernetes_admin/venv/**
+kubernetes_admin/poetry.lock
+kubernetes_admin/key.json
+**/__pycache__/**

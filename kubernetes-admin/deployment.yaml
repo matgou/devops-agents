@@ -1,0 +1,68 @@
+
+# In kubernetes_admin/deployment.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubernetes-admin-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubernetes-admin-agent
+  template:
+    metadata:
+      labels:
+        app: kubernetes-admin-agent
+    spec:
+      serviceAccountName: kubernetes-admin-agent
+      volumes:
+      - name: google-cloud-keys
+        secret:
+          secretName: google-cloud-keys
+      containers:
+      - name: kubernetes-admin-agent
+        imagePullPolicy: Always
+        image: us-central1-docker.pkg.dev/<Complete with your GCP project ID>/adk-repo/k8s-admin-agent:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+            ephemeral-storage: "128Mi"
+          requests:
+            memory: "128Mi"
+            cpu: "500m"
+            ephemeral-storage: "128Mi"
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: google-cloud-keys
+          readOnly: true
+          mountPath: "/etc/google-cloud-keys"
+        env:
+          - name: PORT
+            value: "8080"
+          - name: GOOGLE_CLOUD_PROJECT
+            value: <Complete with your GCP project ID>
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /etc/google-cloud-keys/key.json
+          - name: GOOGLE_CLOUD_LOCATION
+            value: us-central1
+          - name: GOOGLE_GENAI_USE_VERTEXAI
+            value: "true"
+          # If using AI Studio, set GOOGLE_GENAI_USE_VERTEXAI to false and set the following:
+          # - name: GOOGLE_API_KEY
+          #   value: GOOGLE_API_KEY
+          # Add any other necessary environment variables your agent might need
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubernetes-admin-agent
+spec:       
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: kubernetes-admin-agent
